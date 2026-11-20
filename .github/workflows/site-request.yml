@@ -1,0 +1,82 @@
+name: Site request
+
+on:
+  repository_dispatch:
+    types: [site-request]
+  workflow_dispatch:
+    inputs:
+      request:
+        description: Change to make
+        required: true
+      id:
+        description: Request id
+        default: manual
+
+concurrency:
+  group: site-request
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REQUEST: ${{ github.event.client_payload.request || inputs.request }}
+      REQUEST_ID: ${{ github.event.client_payload.id || inputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 5
+
+      - name: Claude makes the change
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            A GSCG team member typed this request in the team doc:
+
+            "${{ env.REQUEST }}"
+
+            Follow CLAUDE.md. Make the change, then write the one-sentence summary to .request-summary.txt.
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 40
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git show:*),Bash(git log:*),Bash(git diff:*)"
+
+      - name: Save and publish
+        id: save
+        run: |
+          git config user.name "gscg-site-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "changed=no" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Site request ${REQUEST_ID}: ${REQUEST:0:70}"
+            git push
+            echo "changed=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report back to the doc
+        if: always()
+        env:
+          CALLBACK_URL: ${{ secrets.CALLBACK_URL }}
+          CALLBACK_SECRET: ${{ secrets.CALLBACK_SECRET }}
+          OUTCOME: ${{ job.status }}
+          CHANGED: ${{ steps.save.outputs.changed }}
+        run: |
+          SUMMARY="$(head -c 300 .request-summary.txt 2>/dev/null || true)"
+          [ -z "$SUMMARY" ] && SUMMARY="No summary was written."
+          [ "$CHANGED" = "no" ] && SUMMARY="No files changed. $SUMMARY"
+          echo "Outcome: $OUTCOME | $SUMMARY"
+          if [ -n "$CALLBACK_URL" ]; then
+            jq -n --arg id "$REQUEST_ID" --arg status "$OUTCOME" --arg summary "$SUMMARY" --arg secret "$CALLBACK_SECRET" \
+              '{id:$id,status:$status,summary:$summary,secret:$secret}' \
+              | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$CALLBACK_URL" > /dev/null || true
+          fi
