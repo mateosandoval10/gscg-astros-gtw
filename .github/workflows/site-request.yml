@@ -45,7 +45,6 @@ jobs:
 
             Follow CLAUDE.md. Make the change, then write the one-sentence summary to .request-summary.txt.
           claude_args: |
-            --model claude-opus-5-5
             --max-turns 40
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git show:*),Bash(git log:*),Bash(git diff:*)"
 
