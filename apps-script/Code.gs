@@ -32,7 +32,17 @@ function queueRequests() {
 function doPost(e) {
   const d = JSON.parse(e.postData.contents);
   if (!/^[a-f0-9]{8}$/.test(d.id || '')) return ContentService.createTextOutput('bad id');
-  const paras = DocumentApp.getActiveDocument().getBody().getParagraphs();
+  const body = DocumentApp.getActiveDocument().getBody();
+  const paras = body.getParagraphs();
+  // The AI adds new content (pages, sections, items) above the Requests section, only while its request is Working.
+  if (d.action === 'append') {
+    if (!paras.some(p => p.getText().indexOf('[Working ' + d.id + ']') !== -1)) return ContentService.createTextOutput('not working');
+    const lines = [''].concat(String(d.text).slice(0, 20000).replace(/\r/g, '').split('\n'));
+    const req = paras.find(p => /^SECTION:\s*Requests/i.test(p.getText().trim()));
+    if (req) { const at = body.getChildIndex(req); lines.forEach((l, k) => body.insertParagraph(at + k, l)); }
+    else lines.forEach(l => body.appendParagraph(l));
+    return ContentService.createTextOutput('appended');
+  }
   if (d.status === 'working' && d.line) {
     for (const p of paras) {
       const t = p.getText().trim();

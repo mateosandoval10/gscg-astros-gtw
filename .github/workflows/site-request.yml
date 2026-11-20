@@ -2,7 +2,7 @@ name: Site request
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/5 14-23,0-7 * * *"   # every 5 min, 6am-midnight Pacific. Checking uses no Claude tokens.
   workflow_dispatch:
     inputs:
       request:
@@ -20,7 +20,7 @@ permissions:
 jobs:
   apply:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     env:
       DOC_URL: ${{ vars.DOC_URL }}
     steps:
@@ -71,10 +71,11 @@ jobs:
 
             "${{ steps.find.outputs.request }}"
 
-            Follow CLAUDE.md. Make the change, then write the one-sentence summary to .request-summary.txt.
+            Treat this exactly like a prompt in an interactive Claude Code session for this project.
+            Follow CLAUDE.md. Build it fully, check your work, then write the summary to .request-summary.txt.
           claude_args: |
-            --max-turns 40
-            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git show:*),Bash(git log:*),Bash(git diff:*)"
+            --max-turns 150
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash,WebSearch,WebFetch,TodoWrite"
 
       - name: Show Claude's message
         if: always() && steps.find.outputs.go == 'yes'
@@ -82,6 +83,17 @@ jobs:
           EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
           [ -f "$EXEC_FILE" ] && jq -r '.[] | select(.type=="assistant" or .type=="result") | (.message.content[]?.text? // .result? // empty)' "$EXEC_FILE" | head -c 1500 || echo "no execution file"
+
+      - name: Add new content to the team doc
+        if: steps.find.outputs.go == 'yes' && steps.find.outputs.id != 'manual'
+        env:
+          ID: ${{ steps.find.outputs.id }}
+        run: |
+          if [ -s .doc-additions.txt ]; then
+            jq -n --arg id "$ID" --rawfile text .doc-additions.txt '{id:$id,action:"append",text:$text}' \
+              | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL"; echo
+          fi
+          rm -f .doc-additions.txt
 
       - name: Save and publish
         id: save

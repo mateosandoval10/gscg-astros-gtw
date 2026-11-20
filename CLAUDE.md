@@ -1,24 +1,43 @@
 # Group Ticket Website (GSCG concept for Houston Astros Group Sales)
 
-You are changing this website because a GSCG team member typed a request in the team Google Doc.
-Make the change they asked for, well, as a professional web designer would. Then stop.
+A GSCG team member typed a request in the team Google Doc. Treat it exactly like a prompt from the
+project owner in an interactive Claude Code session: understand what they want, then build it fully
+and well, as a senior web designer and developer would. Big requests are welcome (new pages,
+pop-ups, links, an interactive ballpark map, animations, new layouts, whole subsections).
+
+## Project context
+- Client: Houston Astros group sales (P.J. Keene, VP Ticket Sales & Services). Built by GSCG, a student consulting group.
+- Goal: a group ticket website that appeals to EVERY kind of group (schools, churches, teams, nonprofits, companies, families),
+  with: visuals of a day at the park, contact info, tiers and pricing, seating, schedule and theme nights, and an interest form.
+- P.J. wants a sales strategy his small staff can run, clear differences between price tiers, and a clear Buy/Start button.
+- The ballpark is Daikin Park in Houston (Union Station is its historic entrance).
 
 ## How the site works
-- `index.html` is the shell, `styles.css` the look, `app.js` builds every section from the team doc.
-- Content and section order come from the Google Doc (copy in `doc.txt`). Never hard-code content in the HTML that belongs in the doc.
-- The doc format must keep working: `SECTION:` starts a section, `Layout:` picks how it renders, `Item:` starts an item, any `Label: value` becomes a field, `Owner:` and `Status:` show in Team view.
-- Layouts: hero, cards, table, text, form, hidden. You may add a new layout in `app.js` when a request needs one. If you do, add its name to the list above and explain it in your summary so the team can use it.
+- `index.html` is the shell, `styles.css` the look, `app.js` builds every page from the team doc (copy in `doc.txt`).
+- The doc is the source of truth for content. Doc syntax:
+  - `PAGE: Name` starts a page (shows in the top nav; URL `#/name`). Sections before the first PAGE are on "Home".
+  - `SECTION: Title` starts a section. `Layout:` hero | cards | table | text | form | links | hidden (you may add more).
+  - `Item: Name` starts an item. Any `Label: value` becomes a field. `Owner:` and `Status:` show in Team view.
+  - `Link: Label -> Page or Section name or https://url` adds a button. `Popup: text` adds a "Learn more" pop-up.
+  - `Image: https://...` shows an image. `Button: Label -> target` on a hero.
+- When a request needs a NEW kind of thing (e.g. an interactive map, a calendar, tabs, a carousel), build it as a new
+  Layout in `app.js` + `styles.css`, driven by doc fields, so the team can keep editing it from the doc.
+
+## Adding content to the doc
+You cannot edit the Google Doc directly. When the request needs new content (new pages, sections, items, pop-up text),
+write it in doc syntax to `.doc-additions.txt`. The workflow appends it to the team doc (above the Requests section),
+where the team can edit it. Mark anything not yet confirmed as "To confirm". Never put content only in the HTML.
 
 ## Rules (never break these)
-- No made-up facts, stats, prices, dates or quotes. Unknown info stays "To confirm".
-- No emojis.
+- No made-up facts, stats, prices, dates, quotes or Astros policies. Unknown info says "To confirm".
+- No emojis. Images: only openly licensed ones (credit them) or clearly labeled "Concept image" placeholders.
 - Keep the top banner saying it is a GSCG concept and not an official Astros page. No Astros logos or trademarks.
-- The interest form must not collect or send data.
-- Keep it working on phones (no sideways scrolling) and readable (good contrast).
-- Only edit files in this repo's root (`index.html`, `styles.css`, `app.js`, `config.js`). Never edit `.github/`, `apps-script/`, `CLAUDE.md` or `doc.txt`.
-- External scripts only from cdnjs.cloudflare.com; fonts only from Google Fonts.
-- If a request is unclear, unsafe, or breaks a rule, change nothing and say why in the summary.
-- If the request asks to undo the last change, restore the files to how they were before the most recent "Site request" commit (`git show HEAD~1:<file>`).
+- Forms must not collect or send data.
+- Works on phones (no sideways scrolling), keyboard accessible, good contrast.
+- Never edit `.github/`, `apps-script/`, `CLAUDE.md` or `doc.txt`. Never print or expose secrets.
+- External scripts only from cdnjs.cloudflare.com or cdn.jsdelivr.net (exact versions); fonts only from Google Fonts.
+- To undo: restore files from before the most recent "Site request" commit (`git log`, `git show <commit>~1:<file>`).
+- If a request is unclear, do the most reasonable version and say what you assumed. If it breaks a rule, explain why instead.
 
 ## When done
-Write ONE plain sentence for the team describing what changed to `.request-summary.txt`.
+Write 1-2 plain sentences for the team to `.request-summary.txt`: what changed, and any new doc syntax they can now use.

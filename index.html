@@ -5,16 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Group Tickets Demo</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body class="teamview">
 <div class="banner">GSCG concept for Houston Astros Group Sales &middot; Demo &middot; Not an official Astros page</div>
 <div class="bar"><b>Group Tickets</b>
+  <nav id="nav" class="pnav" aria-label="Pages"></nav>
   <span class="live" id="live">Live from the team doc</span>
   <label><input type="checkbox" id="tv" checked> Team view (owners and status)</label>
 </div>
 <main id="page"></main>
-<script src="config.js?v=1"></script>
-<script src="app.js?v=1"></script>
+<div id="modal" class="modal" hidden></div>
+<script src="config.js?v=2"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>
