@@ -2,7 +2,8 @@
 ## How this works
 - This doc is the blueprint for our group ticket website. Whatever is written here is what goes on the site.
 - Each Heading 1 is a page. Each Heading 2 is a section on that page, top to bottom.
-- Write anything under a section: words, prices, image links, ideas. Delete the "Tip" line once you start.
+- Write anything under a section: sentences, bullets, prices, image links. Delete the "Tip" line once you start.
+- Use Heading 3 for items inside a section (one per experience, tier or FAQ question). Paste an image link on its own line to show a photo.
 - Add, move or delete sections and pages however you want. Use Format, then Paragraph styles, to make a heading.
 - Talk it through in comments or the group chat.
 ## The website must have
@@ -18,11 +19,9 @@
 - No made-up facts, prices or dates. If we do not know it, write "To confirm".
 - No Astros logos. This is a GSCG concept.
 ## See the website
-- Copy this whole doc, open claude.ai, paste the prompt below, paste the doc under it, and send.
-- Claude builds a clickable version of the site. Check your work, then make changes here.
-COPY FROM HERE
-Build a clickable website from the planning doc below: a group ticket sales site for Houston Astros games at Daikin Park, made as a student consulting concept by GSCG. Skip the "Start here" part. Every Heading 1 after it is a page in the top menu, in order. Every Heading 2 is a section on that page, in order. Use only what is written under each section and ignore lines that start with "Tip". If a section is empty, show a small "Coming soon" placeholder. Never invent prices, dates, stats or quotes, and show "To confirm" where the doc says it. Add a thin top banner: "GSCG concept for Houston Astros Group Sales. Not an official Astros page." No Astros logos. Style: modern and premium, deep navy, white and an orange accent, bold condensed headings, generous white space. Use image links from the doc, otherwise placeholders labeled "Concept image". Put a "Start your group outing" button on every page that goes to the interest form, which must not send data. Make it work on phones. Output one complete HTML file with every page working.
-COPY TO HERE
+- Website: https://mateosandoval10.github.io/gscg-astros-gtw/
+- It updates by itself about 20 seconds after you type here. Refresh the page to see your changes.
+- Empty sections show "Coming soon" on the site. Turn on "Team view" (bottom right of the site) to see each section's tip.
 # Home
 ## Hero
 Tip: the first thing people see. One headline, one sentence, one button.
