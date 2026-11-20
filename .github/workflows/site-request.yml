@@ -51,7 +51,8 @@ jobs:
         env:
           ID: ${{ steps.find.outputs.id }}
           LINE: ${{ steps.find.outputs.line }}
-        run: jq -n --arg id "$ID" --arg line "$LINE" '{id:$id,status:"working",line:$line}' | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL" > /dev/null || true
+        run: |
+          jq -n --arg id "$ID" --arg line "$LINE" '{id:$id,status:"working",line:$line}' | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL" > /dev/null || true
 
       - uses: actions/checkout@v4
         if: steps.find.outputs.go == 'yes'
