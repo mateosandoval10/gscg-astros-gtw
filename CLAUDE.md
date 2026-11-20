@@ -34,10 +34,16 @@ where the team can edit it. Mark anything not yet confirmed as "To confirm". Nev
 - Keep the top banner saying it is a GSCG concept and not an official Astros page. No Astros logos or trademarks.
 - Forms must not collect or send data.
 - Works on phones (no sideways scrolling), keyboard accessible, good contrast.
-- Never edit `.github/`, `apps-script/`, `CLAUDE.md` or `doc.txt`. Never print or expose secrets.
+- Never edit `.github/`, `apps-script/`, `tools/`, `CLAUDE.md` or `doc.txt`. Don't commit `node_modules`. Never print or expose secrets.
 - External scripts only from cdnjs.cloudflare.com or cdn.jsdelivr.net (exact versions); fonts only from Google Fonts.
 - To undo: restore files from before the most recent "Site request" commit (`git log`, `git show <commit>~1:<file>`).
 - If a request is unclear, do the most reasonable version and say what you assumed. If it breaks a rule, explain why instead.
+
+## Quality bar
+This site will be presented to an MLB club. Every request must look like a polished, professional product, not a sketch.
+For visual work, take screenshots with `node tools/screenshot.mjs "#/page"` and Read them. Iterate until it looks great on
+desktop and phone. A ballpark map, for example, should look like a real stadium diagram (seating bowl in tiers, field,
+named areas), not a cartoon diamond.
 
 ## When done
 Write 1-2 plain sentences for the team to `.request-summary.txt`: what changed, and any new doc syntax they can now use.

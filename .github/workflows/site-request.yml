@@ -59,6 +59,10 @@ jobs:
         with:
           fetch-depth: 5
 
+      - name: Install a browser so Claude can see its work
+        if: steps.find.outputs.go == 'yes'
+        run: npm i --no-save --silent playwright@1.48.2 && npx playwright install --with-deps chromium > /dev/null
+
       - name: Claude makes the change
         id: claude
         if: steps.find.outputs.go == 'yes'
@@ -72,9 +76,13 @@ jobs:
             "${{ steps.find.outputs.request }}"
 
             Treat this exactly like a prompt in an interactive Claude Code session for this project.
-            Follow CLAUDE.md. Build it fully, check your work, then write the summary to .request-summary.txt.
+            Follow CLAUDE.md. Plan first, build it fully, then LOOK at it: run
+            node tools/screenshot.mjs "#/<page>" and Read the PNGs in /tmp/shots (desktop and phone).
+            Fix anything that looks unprofessional and check again, at least twice, before you finish.
+            Then write the summary to .request-summary.txt.
           claude_args: |
-            --max-turns 150
+            --model claude-opus-5-5
+            --max-turns 200
             --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash,WebSearch,WebFetch,TodoWrite"
 
       - name: Show Claude's message

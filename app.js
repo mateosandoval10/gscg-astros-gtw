@@ -77,7 +77,9 @@ window.addEventListener('hashchange', () => { if (!location.hash.startsWith('#/'
 async function load() {
   try {
     const url = window.DOC_URL + (window.DOC_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
-    render(await (await fetch(url)).text());
+    let text = await (await fetch(url)).text();
+    if (/[?&]local=1/.test(location.search)) { try { const add = await fetch('.doc-additions.txt'); if (add.ok) text += '\n' + await add.text(); } catch (e) {} }
+    render(text);
     live.textContent = 'Live from the team doc · checked ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
   } catch (e) { live.textContent = 'Could not reach the team doc'; }
 }
