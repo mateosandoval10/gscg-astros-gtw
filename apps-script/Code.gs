@@ -1,59 +1,45 @@
-// Team doc script. Paste into the Google Doc: Extensions > Apps Script.
-// Script properties (Project Settings > Script properties):
-//   GITHUB_TOKEN    fine-grained token, this repo only, Contents: Read and write
-//   GITHUB_REPO     e.g. mateosandoval10/gscg-astros-gtw
-//   CALLBACK_SECRET any long random phrase (same value as the GitHub secret)
-//   SITE_URL        the public website link
-// Deploy > New deployment > Web app, Execute as: Me, Who has access: Anyone.
-
-const P = PropertiesService.getScriptProperties();
+// Team doc script (Extensions > Apps Script). Deploy > New deployment > Web app,
+// Execute as: Me, Who has access: Anyone. No keys or tokens are stored here.
 
 function onOpen() {
   DocumentApp.getUi().createMenu('Website')
-    .addItem('Send my requests to the AI', 'sendRequests')
+    .addItem('Send my requests to the AI', 'queueRequests')
     .addItem('Open the website', 'openSite')
     .addToUi();
 }
 
-// The website reads the doc through this link, live.
+// The website (and the GitHub job) read the doc through this link, live.
 function doGet() {
   const text = DocumentApp.getActiveDocument().getBody().getText();
   return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.TEXT);
 }
 
-// Sends every new "Request:" line to GitHub, where Claude makes the change.
-function sendRequests() {
-  const ui = DocumentApp.getUi();
-  const paras = DocumentApp.getActiveDocument().getBody().getParagraphs();
-  let sent = 0;
-  for (const p of paras) {
-    const text = p.getText().trim();
-    if (!/^Request:/i.test(text) || /\[(Sent|Done|Failed|Working)/.test(text)) continue;
-    const id = Utilities.getUuid().slice(0, 8);
-    const res = UrlFetchApp.fetch('https://api.github.com/repos/' + P.getProperty('GITHUB_REPO') + '/dispatches', {
-      method: 'post', muteHttpExceptions: true, contentType: 'application/json',
-      headers: { Authorization: 'Bearer ' + P.getProperty('GITHUB_TOKEN'), Accept: 'application/vnd.github+json' },
-      payload: JSON.stringify({ event_type: 'site-request', client_payload: { id: id, request: text.replace(/^Request:\s*/i, '') } })
-    });
-    if (res.getResponseCode() === 204) { p.appendText('  [Sent ' + id + ']'); sent++; }
-    else { p.appendText('  [Failed to send: ' + res.getResponseCode() + ']'); }
+// Marks every new "Request:" line as queued. GitHub checks every 5 minutes and Claude makes the change.
+function queueRequests() {
+  let n = 0;
+  for (const p of DocumentApp.getActiveDocument().getBody().getParagraphs()) {
+    const t = p.getText().trim();
+    if (!/^Request:/i.test(t) || /\[(Queued|Working|Done|Failed)/.test(t)) continue;
+    p.appendText('  [Queued ' + Utilities.getUuid().replace(/-/g, '').slice(0, 8) + ']');
+    n++;
   }
-  ui.alert(sent ? 'Sent ' + sent + ' request(s). The website updates in about 3 to 5 minutes, and this doc will say Done.' : 'No new "Request:" lines found.');
+  DocumentApp.getUi().alert(n ? 'Queued ' + n + ' request(s). The AI checks every 5 minutes; the line will change to Working, then Done, and the website updates.' : 'No new "Request:" lines found. Start a line with "Request:" and try again.');
 }
 
-// GitHub calls this when a request finishes, and the doc is marked Done.
+// GitHub reports progress here: working, success or failure.
 function doPost(e) {
   const d = JSON.parse(e.postData.contents);
-  if (d.secret !== P.getProperty('CALLBACK_SECRET')) return ContentService.createTextOutput('no');
-  const tag = '[Sent ' + d.id + ']';
-  const mark = d.status === 'success' ? '[Done: ' + d.summary + ']' : '[Failed: ' + d.summary + ']';
+  if (!/^[a-f0-9]{8}$/.test(d.id || '')) return ContentService.createTextOutput('bad id');
+  const re = new RegExp('\\[(Queued|Working) ' + d.id + '\\]');
+  const mark = d.status === 'working' ? '[Working ' + d.id + ']' : d.status === 'success' ? '[Done: ' + String(d.summary).slice(0, 300) + ']' : '[Failed: ' + String(d.summary).slice(0, 300) + ']';
   for (const p of DocumentApp.getActiveDocument().getBody().getParagraphs()) {
-    if (p.getText().indexOf(tag) !== -1) { p.replaceText(tag.replace(/[\[\]]/g, '\\$&'), mark); break; }
+    const t = p.getText();
+    if (re.test(t)) { p.setText(t.replace(re, mark)); break; }
   }
   return ContentService.createTextOutput('ok');
 }
 
 function openSite() {
-  const url = P.getProperty('SITE_URL');
+  const url = 'https://mateosandoval10.github.io/gscg-astros-gtw/';
   DocumentApp.getUi().showModalDialog(HtmlService.createHtmlOutput('<a href="' + url + '" target="_blank">Open the website</a>'), 'Website');
 }

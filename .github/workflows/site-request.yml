@@ -1,16 +1,13 @@
 name: Site request
 
 on:
-  repository_dispatch:
-    types: [site-request]
+  schedule:
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       request:
-        description: Change to make
-        required: true
-      id:
-        description: Request id
-        default: manual
+        description: Change to make (leave blank to check the doc)
+        required: false
 
 concurrency:
   group: site-request
@@ -25,15 +22,38 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      REQUEST: ${{ github.event.client_payload.request || inputs.request }}
-      REQUEST_ID: ${{ github.event.client_payload.id || inputs.id }}
+      DOC_URL: ${{ vars.DOC_URL }}
     steps:
+      - name: Find the next request
+        id: find
+        env:
+          MANUAL: ${{ inputs.request }}
+        run: |
+          if [ -n "$MANUAL" ]; then
+            { echo "id=manual"; echo "request<<EOF"; echo "$MANUAL"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          [ -z "$DOC_URL" ] && { echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; }
+          LINE="$(curl -sL "$DOC_URL" | grep -m1 -E '^Request:.*\[Queued [a-f0-9]{8}\]' || true)"
+          if [ -z "$LINE" ]; then echo "No queued requests."; echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          ID="$(echo "$LINE" | sed -E 's/.*\[Queued ([a-f0-9]{8})\].*/\1/')"
+          REQ="$(echo "$LINE" | sed -E 's/^Request:[[:space:]]*//; s/[[:space:]]*\[Queued [a-f0-9]{8}\].*//')"
+          echo "Request $ID: $REQ"
+          { echo "id=$ID"; echo "request<<EOF"; echo "$REQ"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"
+
+      - name: Tell the doc we're working
+        if: steps.find.outputs.go == 'yes' && steps.find.outputs.id != 'manual'
+        env:
+          ID: ${{ steps.find.outputs.id }}
+        run: jq -n --arg id "$ID" '{id:$id,status:"working"}' | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL" > /dev/null || true
+
       - uses: actions/checkout@v4
+        if: steps.find.outputs.go == 'yes'
         with:
           fetch-depth: 5
 
       - name: Claude makes the change
         id: claude
+        if: steps.find.outputs.go == 'yes'
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -41,15 +61,15 @@ jobs:
           prompt: |
             A GSCG team member typed this request in the team doc:
 
-            "${{ env.REQUEST }}"
+            "${{ steps.find.outputs.request }}"
 
             Follow CLAUDE.md. Make the change, then write the one-sentence summary to .request-summary.txt.
           claude_args: |
             --max-turns 40
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git show:*),Bash(git log:*),Bash(git diff:*)"
 
-      - name: Show Claude's message (no secrets)
-        if: always()
+      - name: Show Claude's message
+        if: always() && steps.find.outputs.go == 'yes'
         env:
           EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
         run: |
@@ -57,23 +77,21 @@ jobs:
 
       - name: Save and publish
         id: save
+        if: steps.find.outputs.go == 'yes'
+        env:
+          ID: ${{ steps.find.outputs.id }}
+          REQ: ${{ steps.find.outputs.request }}
         run: |
           git config user.name "gscg-site-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          if git diff --cached --quiet; then
-            echo "changed=no" >> "$GITHUB_OUTPUT"
-          else
-            git commit -m "Site request ${REQUEST_ID}: ${REQUEST:0:70}"
-            git push
-            echo "changed=yes" >> "$GITHUB_OUTPUT"
-          fi
+          if git diff --cached --quiet; then echo "changed=no" >> "$GITHUB_OUTPUT"
+          else git commit -m "Site request ${ID}: ${REQ:0:70}"; git push; echo "changed=yes" >> "$GITHUB_OUTPUT"; fi
 
       - name: Report back to the doc
-        if: always()
+        if: always() && steps.find.outputs.go == 'yes'
         env:
-          CALLBACK_URL: ${{ secrets.CALLBACK_URL }}
-          CALLBACK_SECRET: ${{ secrets.CALLBACK_SECRET }}
+          ID: ${{ steps.find.outputs.id }}
           OUTCOME: ${{ job.status }}
           CHANGED: ${{ steps.save.outputs.changed }}
         run: |
@@ -81,8 +99,6 @@ jobs:
           [ -z "$SUMMARY" ] && SUMMARY="No summary was written."
           [ "$CHANGED" = "no" ] && SUMMARY="No files changed. $SUMMARY"
           echo "Outcome: $OUTCOME | $SUMMARY"
-          if [ -n "$CALLBACK_URL" ]; then
-            jq -n --arg id "$REQUEST_ID" --arg status "$OUTCOME" --arg summary "$SUMMARY" --arg secret "$CALLBACK_SECRET" \
-              '{id:$id,status:$status,summary:$summary,secret:$secret}' \
-              | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$CALLBACK_URL" > /dev/null || true
-          fi
+          [ "$ID" = "manual" ] && exit 0
+          jq -n --arg id "$ID" --arg status "$OUTCOME" --arg summary "$SUMMARY" '{id:$id,status:$status,summary:$summary}' \
+            | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL" > /dev/null || true
