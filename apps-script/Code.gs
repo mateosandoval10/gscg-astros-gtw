@@ -1,3 +1,4 @@
+/** @OnlyCurrentDoc */
 // Team doc script (Extensions > Apps Script). Deploy > New deployment > Web app,
 // Execute as: Me, Who has access: Anyone. No keys or tokens are stored here.
 
