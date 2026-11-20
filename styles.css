@@ -54,3 +54,20 @@ input, select, textarea { font:inherit; padding:11px 12px; border:1px solid var(
 .modal-card img { width:100%; border-radius:10px; margin-bottom:14px; }
 .modal-card h3 { font-family:"Barlow Condensed"; font-size:28px; text-transform:uppercase; color:var(--navy); margin:0 0 10px; }
 .modal-x { position:absolute; top:10px; right:14px; border:0; background:none; font-size:28px; cursor:pointer; color:var(--ink2); }
+/* interactive map */
+.mapwrap { display:grid; gap:28px; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); align-items:start; }
+.mapbox { position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; aspect-ratio:800/520; background:#e8ecf3; }
+.mapsvg { position:absolute; inset:0; width:100%; height:100%; }
+.pin { position:absolute; transform:translate(-50%,-50%); width:38px; height:38px; border-radius:50%; border:3px solid #fff; background:var(--red); color:#fff; font:700 16px "Barlow Condensed", Arial, sans-serif; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.35); padding:0; transition:transform .15s; }
+.pin:hover { transform:translate(-50%,-50%) scale(1.15); }
+.pin:focus-visible, .maprow:focus-visible, .btn:focus-visible, .modal-x:focus-visible, .pnav a:focus-visible { outline:3px solid #1a5fd0; outline-offset:2px; }
+.pin.z-history, .pn.z-history { background:var(--navy); }
+.pin.z-group, .pn.z-group { background:#1e6b3d; }
+.pin.z-seats, .pn.z-seats { background:#8a4b00; }
+.maplist { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.maprow { display:flex; gap:12px; align-items:center; width:100%; text-align:left; font:inherit; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 14px; cursor:pointer; color:var(--ink); }
+.maprow:hover { border-color:var(--navy); background:var(--bg); }
+.maprow small { color:var(--ink2); font-size:13px; }
+.pn { flex:none; width:30px; height:30px; border-radius:50%; background:var(--red); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; }
+@media (max-width:760px){ .mapwrap { grid-template-columns:minmax(0,1fr); } .pin { width:32px; height:32px; font-size:14px; } }
+@media (prefers-reduced-motion:reduce){ .pin { transition:none; } }
