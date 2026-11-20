@@ -15,6 +15,7 @@ function doGet() {
   return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.TEXT);
 }
 
+// Optional menu. Lines that start with "Request:" and end with "(Your name)" are picked up automatically.
 // Marks every new "Request:" line as queued. GitHub checks every 5 minutes and Claude makes the change.
 function queueRequests() {
   let n = 0;
@@ -31,9 +32,18 @@ function queueRequests() {
 function doPost(e) {
   const d = JSON.parse(e.postData.contents);
   if (!/^[a-f0-9]{8}$/.test(d.id || '')) return ContentService.createTextOutput('bad id');
+  const paras = DocumentApp.getActiveDocument().getBody().getParagraphs();
+  if (d.status === 'working' && d.line) {
+    for (const p of paras) {
+      const t = p.getText().trim();
+      if (t === String(d.line).trim()) { p.setText(t + '  [Working ' + d.id + ']'); break; }
+      if (t.indexOf('[Queued ' + d.id + ']') !== -1) { p.setText(t.replace('[Queued ' + d.id + ']', '[Working ' + d.id + ']')); break; }
+    }
+    return ContentService.createTextOutput('ok');
+  }
   const re = new RegExp('\\[(Queued|Working) ' + d.id + '\\]');
-  const mark = d.status === 'working' ? '[Working ' + d.id + ']' : d.status === 'success' ? '[Done: ' + String(d.summary).slice(0, 300) + ']' : '[Failed: ' + String(d.summary).slice(0, 300) + ']';
-  for (const p of DocumentApp.getActiveDocument().getBody().getParagraphs()) {
+  const mark = d.status === 'success' ? '[Done: ' + String(d.summary).slice(0, 300) + ']' : '[Failed: ' + String(d.summary).slice(0, 300) + ']';
+  for (const p of paras) {
     const t = p.getText();
     if (re.test(t)) { p.setText(t.replace(re, mark)); break; }
   }

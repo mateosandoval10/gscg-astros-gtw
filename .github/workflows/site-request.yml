@@ -33,18 +33,25 @@ jobs:
             { echo "id=manual"; echo "request<<EOF"; echo "$MANUAL"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"; exit 0
           fi
           [ -z "$DOC_URL" ] && { echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; }
-          LINE="$(curl -sL "$DOC_URL" | grep -m1 -E '^Request:.*\[Queued [a-f0-9]{8}\]' || true)"
-          if [ -z "$LINE" ]; then echo "No queued requests."; echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; fi
-          ID="$(echo "$LINE" | sed -E 's/.*\[Queued ([a-f0-9]{8})\].*/\1/')"
+          DOC="$(curl -sL "$DOC_URL" | tr -d '\r')"
+          LINE="$(echo "$DOC" | grep -m1 -E '^Request:.*\[Queued [a-f0-9]{8}\]' || true)"
+          if [ -n "$LINE" ]; then
+            ID="$(echo "$LINE" | sed -E 's/.*\[Queued ([a-f0-9]{8})\].*/\1/')"
+          else
+            LINE="$(echo "$DOC" | grep -v '\[' | grep -m1 -E '^Request:.*\([^)]+\)[[:space:]]*$' || true)"
+            ID="$(openssl rand -hex 4)"
+          fi
+          if [ -z "$LINE" ]; then echo "No new requests."; echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; fi
           REQ="$(echo "$LINE" | sed -E 's/^Request:[[:space:]]*//; s/[[:space:]]*\[Queued [a-f0-9]{8}\].*//')"
           echo "Request $ID: $REQ"
-          { echo "id=$ID"; echo "request<<EOF"; echo "$REQ"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"
+          { echo "id=$ID"; echo "request<<EOF"; echo "$REQ"; echo "EOF"; echo "line<<EOF"; echo "$LINE"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"
 
       - name: Tell the doc we're working
         if: steps.find.outputs.go == 'yes' && steps.find.outputs.id != 'manual'
         env:
           ID: ${{ steps.find.outputs.id }}
-        run: jq -n --arg id "$ID" '{id:$id,status:"working"}' | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL" > /dev/null || true
+          LINE: ${{ steps.find.outputs.line }}
+        run: jq -n --arg id "$ID" --arg line "$LINE" '{id:$id,status:"working",line:$line}' | curl -sS -L -X POST -H 'Content-Type: application/json' --data @- "$DOC_URL" > /dev/null || true
 
       - uses: actions/checkout@v4
         if: steps.find.outputs.go == 'yes'

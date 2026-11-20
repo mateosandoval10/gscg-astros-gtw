@@ -69,4 +69,4 @@ Daphne: can the photos go right under the welcome banner?
 
 SECTION: Requests
 Layout: hidden
-Type a request for the AI on its own line starting with "Request:" and your name, then use the Website menu > Send my requests.
+Type a request on its own line: start with "Request:" and end with your name in parentheses, like (Daphne). The AI picks it up within about 5 to 10 minutes.
