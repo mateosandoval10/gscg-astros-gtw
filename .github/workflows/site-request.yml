@@ -33,18 +33,14 @@ jobs:
             { echo "id=manual"; echo "request<<EOF"; echo "$MANUAL"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"; exit 0
           fi
           [ -z "$DOC_URL" ] && { echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; }
-          DOC="$(curl -sL "$DOC_URL" | tr -d '\r')"
-          LINE="$(echo "$DOC" | grep -m1 -E '^Request:.*\[Queued [a-f0-9]{8}\]' || true)"
-          if [ -n "$LINE" ]; then
-            ID="$(echo "$LINE" | sed -E 's/.*\[Queued ([a-f0-9]{8})\].*/\1/')"
-          else
-            LINE="$(echo "$DOC" | grep -v '\[' | grep -m1 -E '^Request:.*\([^)]+\)[[:space:]]*$' || true)"
-            ID="$(openssl rand -hex 4)"
-          fi
-          if [ -z "$LINE" ]; then echo "No new requests."; echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; fi
-          REQ="$(echo "$LINE" | sed -E 's/^Request:[[:space:]]*//; s/[[:space:]]*\[Queued [a-f0-9]{8}\].*//')"
+          curl -sL "$DOC_URL" -o /tmp/doc.txt
+          curl -sL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/tools/find_request.py" -o /tmp/find_request.py
+          FOUND="$(python3 /tmp/find_request.py < /tmp/doc.txt)"
+          if [ -z "$FOUND" ]; then echo "No new requests."; echo "go=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          ID="$(openssl rand -hex 4)"
+          REQ="$(echo "$FOUND" | jq -r .request)"; LINE="$(echo "$FOUND" | jq -r .line)"
           echo "Request $ID: $REQ"
-          { echo "id=$ID"; echo "request<<EOF"; echo "$REQ"; echo "EOF"; echo "line<<EOF"; echo "$LINE"; echo "EOF"; echo "go=yes"; } >> "$GITHUB_OUTPUT"
+          { echo "id=$ID"; echo "request<<EOF_REQ"; echo "$REQ"; echo "EOF_REQ"; echo "line<<EOF_LINE"; echo "$LINE"; echo "EOF_LINE"; echo "go=yes"; } >> "$GITHUB_OUTPUT"
 
       - name: Tell the doc we're working
         if: steps.find.outputs.go == 'yes' && steps.find.outputs.id != 'manual'
@@ -77,7 +73,7 @@ jobs:
 
             Treat this exactly like a prompt in an interactive Claude Code session for this project.
             Follow CLAUDE.md. Plan first, build it fully, then LOOK at it: run
-            node tools/screenshot.mjs "#/<page>" and Read the PNGs in /tmp/shots (desktop and phone).
+            node tools/screenshot.mjs "#<section-id>" and Read the PNGs in /tmp/shots (desktop and phone).
             Fix anything that looks unprofessional and check again, at least twice, before you finish.
             Then write the summary to .request-summary.txt.
           claude_args: |
@@ -114,7 +110,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if ! git diff --quiet; then
             V="${GITHUB_RUN_NUMBER}"
-            sed -i -E "s#(styles\.css|config\.js|app\.js)\?v=[0-9]+#\1?v=${V}#g" index.html
+            sed -i -E "s#(styles\.css|config\.js|stadium\.js|app\.js)\?v=[0-9]+#\1?v=${V}#g" index.html
           fi
           git add -A
           if git diff --cached --quiet; then echo "changed=no" >> "$GITHUB_OUTPUT"

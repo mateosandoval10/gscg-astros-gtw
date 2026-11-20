@@ -1,5 +1,5 @@
 // Usage: node tools/screenshot.mjs "#/page-slug" [more routes...]
-// Serves the site locally (with .doc-additions.txt merged in) and saves desktop + phone screenshots to /tmp/shots.
+// Serves the site locally, reading the live team doc plus .doc-additions.txt, and saves desktop + phone screenshots to /tmp/shots.
 import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -17,7 +17,7 @@ for (const [w, h, tag] of [[1366, 900, 'desktop'], [390, 844, 'phone']]) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   for (const r of routes) {
-    await page.goto('http://localhost:4173/?local=1' + r, { waitUntil: 'networkidle' });
+    await page.goto('http://localhost:4173/?preview=1' + r, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);
     const file = `/tmp/shots/${tag}-${(r.replace(/[^a-z0-9]+/gi, '-') || 'home')}.png`;
     await page.screenshot({ path: file, fullPage: true });

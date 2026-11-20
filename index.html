@@ -3,20 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Group Tickets Demo</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=11">
+<title>Group Tickets | Daikin Park (GSCG concept)</title>
+<meta name="description" content="GSCG concept for Houston Astros group sales: plan a group outing at Daikin Park.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body class="teamview">
-<div class="banner">GSCG concept for Houston Astros Group Sales &middot; Demo &middot; Not an official Astros page</div>
-<div class="bar"><b>Group Tickets</b>
-  <nav id="nav" class="pnav" aria-label="Pages"></nav>
-  <span class="live" id="live">Live from the team doc</span>
-  <label><input type="checkbox" id="tv" checked> Team view (owners and status)</label>
+<div class="banner">GSCG concept for Houston Astros Group Sales &middot; Not an official Astros page</div>
+<div class="topbar">
+  <div class="wrap tb-in">
+    <a class="brand" href="#top"><span class="mark" aria-hidden="true"></span>Group Tickets</a>
+    <nav id="nav" class="snav" aria-label="Sections"></nav>
+    <a id="cta" class="btn primary sm" href="#interest-form">Get started</a>
+  </div>
 </div>
-<main id="page"></main>
+<main id="page"><div class="loading">Loading the team doc&hellip;</div></main>
+<div class="teambar"><span class="live" id="live">Live from the team doc</span><label><input type="checkbox" id="tv" checked> Team view</label></div>
 <div id="modal" class="modal" hidden></div>
-<script src="config.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="config.js?v=6"></script>
+<script src="stadium.js?v=6"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
