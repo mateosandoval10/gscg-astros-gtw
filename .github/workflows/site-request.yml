@@ -48,6 +48,13 @@ jobs:
             --max-turns 40
             --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git show:*),Bash(git log:*),Bash(git diff:*)"
 
+      - name: Show Claude's message (no secrets)
+        if: always()
+        env:
+          EXEC_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          [ -f "$EXEC_FILE" ] && jq -r '.[] | select(.type=="assistant" or .type=="result") | (.message.content[]?.text? // .result? // empty)' "$EXEC_FILE" | head -c 1500 || echo "no execution file"
+
       - name: Save and publish
         id: save
         run: |
