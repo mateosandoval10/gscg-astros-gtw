@@ -92,6 +92,10 @@ jobs:
         run: |
           git config user.name "gscg-site-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            V="${GITHUB_RUN_NUMBER}"
+            sed -i -E "s#(styles\.css|config\.js|app\.js)\?v=[0-9]+#\1?v=${V}#g" index.html
+          fi
           git add -A
           if git diff --cached --quiet; then echo "changed=no" >> "$GITHUB_OUTPUT"
           else git commit -m "Site request ${ID}: ${REQ:0:70}"; git push; echo "changed=yes" >> "$GITHUB_OUTPUT"; fi
