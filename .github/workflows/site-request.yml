@@ -32,14 +32,6 @@ jobs:
         with:
           fetch-depth: 5
 
-      - name: Check token shape (no secret printed)
-        env:
-          T: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-        run: |
-          echo "length: ${#T}"
-          case "$T" in sk-ant-oat01-*) echo "prefix ok";; *) echo "prefix WRONG";; esac
-          case "$T" in *[[:space:]]*) echo "contains spaces or line breaks";; *) echo "no spaces";; esac
-
       - name: Claude makes the change
         id: claude
         uses: anthropics/claude-code-action@v1
